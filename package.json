@@ -4,7 +4,10 @@
   },
   "type": "module",
   "dependencies": {
-    "fs": "^0.0.1-security",
     "typescript": "^5.2.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.5.7",
+    "ts-node": "^10.9.1"
   }
 }

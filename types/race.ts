@@ -1,4 +1,5 @@
 import { IDriver } from "./driver";
+import { IDriverPoints } from "./driverPoints";
 
 export interface IRace {
   raceName: string;

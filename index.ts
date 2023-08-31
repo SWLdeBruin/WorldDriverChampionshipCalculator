@@ -1,10 +1,12 @@
 import fs from "fs";
 import { IRaceData } from "./types/racedata";
 import { IDriverPoints } from "./types/driverPoints";
+import { IRace } from "./types/race";
+import { IChampionshipPrediction } from "./types/championschipPrediction";
 
 const pointsFastestLap = 1;
 
-const data: IRaceData = JSON.parse(fs.readFileSync("racedata.json"));
+const data: IRaceData = JSON.parse(fs.readFileSync("racedata.json").toString());
 
 const raceCount = data.totalRaces;
 const racesDiscontinued = data.racesDiscontinued;
@@ -66,89 +68,157 @@ for (const race of data.raceDataPerRace) {
 currentDriverStandings.sort((a, b) => b.points - a.points);
 
 let canWinChampionship = false;
-let currentResultsForChampionship = [];
-let lowestResultsForChampionship = [];
+let worstFinishingPositionPerRace: IChampionshipPrediction[] = [];
 
-const racesLeftThisSeason = data.raceDataPerRace.filter((race) => race.raceResults.length === 0);
+const racesToGo = data.raceDataPerRace.filter((raceData) => raceData.raceResults.length === 0);
+const championshipLeader = {...currentDriverStandings[0]};
+const championshipBestCompetitor = {...currentDriverStandings[1]};
 
-let numberOneDriverPosition = 0;
-
-if (currentDriverStandings.length > 0) {
-  breakToThis:
-  do {
-    const topTwoDrivers: IDriverPoints[] = currentDriverStandings.slice(0, 2).map((driver) => ({...driver}));
-    
-    const numberOneDriver: IDriverPoints = {...topTwoDrivers.shift()};
+// do {
+  for (const race of racesToGo) {
+    const finishedPosition = worstFinishingPositionPerRace.find((raceWithPosition) => race.raceName === raceWithPosition.raceName);
   
-    for (const race of racesLeftThisSeason) {
-      const foundRace = currentResultsForChampionship.find((r) => r.raceName === race.raceName);
+    if (finishedPosition === undefined) {
+      let leaderPoints = championshipLeader.points;
+      let competitorPoints = championshipBestCompetitor.points;
   
-      if (foundRace) {
-        const gainedPoints = numberOneDriverPosition < 10 ? pointsForRace[numberOneDriverPosition] : 0;
-        numberOneDriver.points += gainedPoints;
-        if (Array.isArray(race.sprintResults)) {
-          numberOneDriver.points += pointsSprintRace[0];
-        }
-  
-        let i = 0;
-        for (let j = 0; j < topTwoDrivers.length; j++) {
-          if (numberOneDriverPosition === i) { 
-            i++;
-          }
-  
-          topTwoDrivers[j].points += pointsRace[i];
-          topTwoDrivers[j].points += pointsFastestLap;
-          if (Array.isArray(race.sprintResults)) {
-            topTwoDrivers[j].points += pointsSprintRace[i];
-          }
-          
-          i++;
-        }
-  
-        foundRace.raceResults = [
-          {...numberOneDriver},
-          ...topTwoDrivers.map((driver) => ({...driver}))
-        ];
-      } else {
-        numberOneDriver.points += pointsRace[0];
-        numberOneDriver.points += pointsFastestLap;
-        if (Array.isArray(race.sprintResults)) {
-          numberOneDriver.points += pointsSprintRace[0];
-        }
-  
-        for (let i = 1; i <= topTwoDrivers.length; i++) {
-          topTwoDrivers[i - 1].points += pointsRace[i];
-  
-          if (Array.isArray(race.sprintResults)) {
-            topTwoDrivers[i - 1].points += pointsSprintRace[i];
-          }
-        }
-  
-        race.raceResults = [
-          {...numberOneDriver},
-          ...topTwoDrivers.map((driver) => ({...driver}))
-        ];
-  
-        currentResultsForChampionship.push(race);
+      leaderPoints += pointsFastestLap;
+      leaderPoints += pointsForRace[0];
+      if (race.sprintResults !== undefined) {
+        leaderPoints += pointsForSprintRace[0];
       }
+  
+      championshipLeader.points = leaderPoints;
+  
+      competitorPoints += pointsForRace[1];
+      if (race.sprintResults !== undefined) {
+        competitorPoints += pointsForSprintRace[1];
+      }
+  
+      championshipBestCompetitor.points = competitorPoints;
+  
+      const newRacePrediction: IChampionshipPrediction = {
+        raceName: race.raceName,
+        raceResults: [
+          {
+            driverName: championshipLeader.driverName,
+            points: leaderPoints
+          },
+          {
+            driverName: championshipBestCompetitor.driverName,
+            points: competitorPoints
+          }
+        ],
+        worstFinishingPosition: 1
+      }
+  
+      worstFinishingPositionPerRace.push(newRacePrediction);
+    } else {
+      
     }
-    
-    const lastResult = currentResultsForChampionship[currentResultsForChampionship.length - 1].raceResults.sort((a, b) => b.points - a.points);
-  
-    canWinChampionship = lastResult[0].driverName == numberOneDriver.driverName;
-  
-    numberOneDriverPosition++;
-  
-    if (numberOneDriverPosition >= 20) {
-      canWinChampionship = false;
-      console.log(numberOneDriverPosition)
-    }
-    if (canWinChampionship) {
-      lowestResultsForChampionship = currentResultsForChampionship;
-    }
-  } while (canWinChampionship);
-  
-  for (const race of currentResultsForChampionship) {
-    console.log(race, numberOneDriverPosition);
   }
+
+
+// } while(!canWinChampionship);
+
+for (const race of worstFinishingPositionPerRace) {
+  console.log(race.raceName)
+
+  console.log(race.raceResults)
+
+  console.log(race.worstFinishingPosition)
 }
+
+
+
+
+// let canWinChampionship = false;
+// let currentResultsForChampionship: IChampionshipPrediction[] = [];
+// let lowestResultsForChampionship: IChampionshipPrediction[] = [];
+
+// const racesLeftThisSeason = data.raceDataPerRace.filter((race) => race.raceResults.length === 0);
+
+// if (currentDriverStandings.length > 0) {
+//   let numberOneDriverPosition = 0;
+
+//   do {
+//     const topTwoDrivers: IDriverPoints[] = currentDriverStandings.slice(0, 2).map((driver) => ({...driver}));
+    
+//     const numberOneDriver: IDriverPoints = {...topTwoDrivers.shift()!};
+  
+//     for (const race of racesLeftThisSeason) {
+//       const foundRace = currentResultsForChampionship.find((r) => r.raceName === race.raceName);
+  
+//       if (foundRace) {
+//         const gainedPoints = numberOneDriverPosition < 10 ? pointsForRace[numberOneDriverPosition] : 0;
+//         numberOneDriver.points += gainedPoints;
+//         if (Array.isArray(race.sprintResults)) {
+//           numberOneDriver.points += pointsForSprintRace[0];
+//         }
+  
+//         let i = 0;
+//         for (let j = 0; j < topTwoDrivers.length; j++) {
+//           if (numberOneDriverPosition === i) { 
+//             i++;
+//           }
+  
+//           topTwoDrivers[j].points += pointsForRace[i];
+//           topTwoDrivers[j].points += pointsFastestLap;
+//           if (Array.isArray(race.sprintResults)) {
+//             topTwoDrivers[j].points += pointsForSprintRace[i];
+//           }
+          
+//           i++;
+//         }
+  
+//         foundRace.raceResults = [
+//           {...numberOneDriver},
+//           ...topTwoDrivers.map((driver) => ({...driver}))
+//         ];
+//       } else {
+//         const newRace: IChampionshipPrediction = {
+//           raceName: race.raceName,
+//           raceResults: []
+//         }
+//         numberOneDriver.points += pointsForRace[0];
+//         numberOneDriver.points += pointsFastestLap;
+//         if (Array.isArray(race.sprintResults)) {
+//           numberOneDriver.points += pointsForSprintRace[0];
+//         }
+  
+//         for (let i = 1; i <= topTwoDrivers.length; i++) {
+//           topTwoDrivers[i - 1].points += pointsForRace[i];
+  
+//           if (Array.isArray(race.sprintResults)) {
+//             topTwoDrivers[i - 1].points += pointsForSprintRace[i];
+//           }
+//         }
+  
+//         newRace.raceResults = [
+//           {...numberOneDriver},
+//           ...topTwoDrivers.map((driver) => ({...driver}))
+//         ];
+  
+//         currentResultsForChampionship.push(newRace);
+//       }
+//     }
+    
+//     const lastResult = currentResultsForChampionship[currentResultsForChampionship.length - 1].raceResults.sort((a, b) => b.points - a.points);
+  
+//     canWinChampionship = lastResult[0].driverName == numberOneDriver.driverName;
+  
+//     numberOneDriverPosition++;
+  
+//     if (numberOneDriverPosition >= 20) {
+//       canWinChampionship = false;
+//       console.log(numberOneDriverPosition)
+//     }
+//     if (canWinChampionship) {
+//       lowestResultsForChampionship = currentResultsForChampionship;
+//     }
+//   } while (canWinChampionship);
+  
+//   for (const race of currentResultsForChampionship) {
+//     console.log(race, numberOneDriverPosition);
+//   }
+// }
