@@ -1,8 +1,9 @@
 {
   "scripts": {
-    "compile": "tsc"
+    "compile": "tsc",
+    "start": "node --loader ts-node/esm index.ts"
   },
-  "type": "module",
+  "type": "commonjs",
   "dependencies": {
     "typescript": "^5.2.2"
   },
