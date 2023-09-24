@@ -9,7 +9,7 @@ const calculateCurrentDriverStandings = () => {
   const currentDriverStandings = []
 
   for (const race of data.raceDataPerRace) {
-    if (race.raceResults !== "Discontinued" || race.raceResults.length > 0) {
+    if (race.raceResults.length > 0) {
       let driverPosition = 0;
       for (const driverRaceResult of race.raceResults) {
         if (!driverRaceResult.includes("(DNF)")) {

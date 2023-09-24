@@ -13,6 +13,7 @@ const currentDriverStandings = calculateCurrentDriverStandings();
 let canWinChampionship = false;
 let worstFinishingPositionPerRace = [];
 
+const racesDriven = data.raceDataPerRace.filter((raceData) => raceData.raceResults.length > 0);
 const racesToGo = data.raceDataPerRace.filter((raceData) => raceData.raceResults.length === 0);
 const championshipLeader = {...currentDriverStandings[0]};
 const championshipBestCompetitor = {...currentDriverStandings[1]};
@@ -60,19 +61,43 @@ for (const race of racesToGo) {
 
 if (championshipLeader.driverName === worstFinishingPositionPerRace[worstFinishingPositionPerRace.length - 1].raceResults.sort((a, b) => b.points - a.points)[0].driverName) {
   canWinChampionship = true;
+
+  console.log("Current standings")
+  console.log(currentDriverStandings)
 } else {
   canWinChampionship = false;
 }
 
 while (canWinChampionship) {
-  const newChampionship = calculateCurrentDriverStandings();
-
   const raceFinishesInsidePoints = worstFinishingPositionPerRace.filter((race) => race.worstFinishingPosition <= pointsForRace.length);
   const finishesOutsidePoints = worstFinishingPositionPerRace.filter((race) => race.worstFinishingPosition > pointsForRace.length);
   
   const lastRaceInsidePoints = raceFinishesInsidePoints[raceFinishesInsidePoints.length - 1];
 
-  const secondToLastRaceInsidePoints = raceFinishesInsidePoints[raceFinishesInsidePoints.length - 2];
+  if (lastRaceInsidePoints === undefined) {
+    canWinChampionship = false;
+    break;
+  }
+
+  let secondToLastRaceInsidePoints = raceFinishesInsidePoints[raceFinishesInsidePoints.length - 2];
+
+  if (secondToLastRaceInsidePoints === undefined) {
+    const lastDrivenRace = racesDriven[racesDriven.length - 1];
+
+    secondToLastRaceInsidePoints = {
+      raceName: lastDrivenRace.raceName,
+      raceResults: [
+        {
+          driverName: currentDriverStandings[0].driverName,
+          points: currentDriverStandings[0].points
+        },
+        {
+          driverName: currentDriverStandings[1].driverName,
+          points: currentDriverStandings[1].points
+        }
+      ]
+    }
+  }
 
   const newChampionshipLeader = {...secondToLastRaceInsidePoints.raceResults[0]};
   const newChampionshipBestCompetitor = {...secondToLastRaceInsidePoints.raceResults[1]};
@@ -174,4 +199,8 @@ for (const race of worstFinishingPositionPerRace) {
   console.log(race.raceResults)
 
   console.log(race.worstFinishingPosition)
+
+  console.log("")
+  console.log("----------------------------------")
+  console.log("")
 }
